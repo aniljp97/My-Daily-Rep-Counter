@@ -26,10 +26,6 @@ int maxDistance = 60; // distance before ping gives up on return aka distance in
 int display_num = 0; // reps to be display
 int distance; // distance from ultrasonic sensor in inches
 
-// for keeping a delay between reading of distance
-int delay_time = 0; // time between reads (microseconds)
-int delay_curr = 0; // number being incremented 
-
 // for keeping delay between for ability to increment between reps
 int justAddedDelayCurr = 0;
 int betweenRepDelayTime = 300;
@@ -58,7 +54,6 @@ void setup() {
   // define and set current time to RTC module
   Wire.begin();
   RTC.begin();
-  // for when RTC module loses main power source
   if (! RTC.isrunning()) {
     Serial.println("RTC is NOT running!");
     // following line sets the RTC to the date & time this sketch was compiled
@@ -76,14 +71,8 @@ void loop() {
     display_num = 0;
   }
 
-  // Applies a loop delay on the repeated reading of distance from the ultrasonic sensor based on global definitions.
-  // NOTE:: in current state of project, no disatnce reading delay needed; so 'if' 'else' statements are commented out.
-//  if(delay_curr > delay_time) {
-    distance = sonar.ping_cm();
-//    delay_curr = 0;
-//  } else {
-//    delay_curr++;
-//  }
+  // Get distance from the ultrasonic sensor is centimeters. If it is past the set max distance it will return 0.
+  distance = sonar.ping_cm();
 
   // Applies a loop delay on being able to increment the total amount of reps based on global definitions
   // The ability to increment reps based on the bool variable justAdded
@@ -262,30 +251,6 @@ void lightDigit(int digitToDisplay, int digitPosition) {
   digitalWrite(digit2, DIGIT_OFF);
   digitalWrite(digit3, DIGIT_OFF);
   digitalWrite(digit4, DIGIT_OFF);
-}
-
-
-////////// Methods for ULTRASONIC SENSOR. main:: getDistance() //////////
-
-int getDistance() {
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(5);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
-  pinMode(echoPin, INPUT);
-  long duration = pulseIn(echoPin, HIGH);
- 
-  // Convert the time into a distance
-  long inches = (duration/2) / 74;   // Divide by 74 or multiply by 0.0135
-
-  return inches;
 }
 
 
