@@ -3,32 +3,31 @@
 #include "RTClib.h"
 
 // Pins for digits in number display
-int digit4 = 6; //PWM Display most left display
-int digit3 = 9; //PWM Display second left
+int digit4 = 6;  //PWM Display most left display
+int digit3 = 9;  //PWM Display second left
 int digit2 = 10; //PWM Display second right display
 int digit1 = 11; //PWM Display most right display
 
 // Pins for individual segments in number display
-int segA = 2; 
-int segB = 3; 
-int segC = 4; 
-int segD = 5; 
-int segE = A0; 
-int segF = 7; 
-int segG = 8; 
+int segA = A2; //12;
+int segB = 7;  //13;
+int segC = A0; //4; 
+int segD = 4;  //5;  
+int segE = 5;  //A0; 
+int segF = A3; //7; 
+int segG = A1; //8; 
 
 // Pins for ultrasonic sensor
-int trigPin = 12;    // Trigger
-int echoPin = 13;    // Echo
-int maxDistance = 60; // distance before ping gives up on return aka distance in cm that a rep will be read within (anything closer than 60 cm will be a rep)
+int trigPin = 2;    // Trigger
+int echoPin = 3;    // Echo
+int maxDistance = 43; // distance before ping gives up on return aka distance in cm that a rep will be read within (anything closer than # cm will be a rep)
 
 // important changing numbers
 int display_num = 0; // reps to be display
 int distance; // distance from ultrasonic sensor in inches
 
 // for keeping delay between for ability to increment between reps
-int justAddedDelayCurr = 0;
-int betweenRepDelayTime = 300;
+int betweenRepDelayTime = 500; // delay in milliseconds
 
 // Class objects
 RTC_DS1307 RTC; //define DS1307 object for keeping real time
@@ -62,6 +61,7 @@ void setup() {
 }
 
 bool justAdded = false; // true if a rep has "just" (in the last .5 secs) been made
+long prevTime = 0; // keeps track of time in milliseconds of when a reps was made.
 
 void loop() {
   // First checks if it is 4am. If so reset the display number to 0.
@@ -72,25 +72,26 @@ void loop() {
   }
 
   // Get distance from the ultrasonic sensor is centimeters. If it is past the set max distance it will return 0.
-  distance = sonar.ping_cm();
+  distance = sonar.ping();
 
-  // Applies a loop delay on being able to increment the total amount of reps based on global definitions
-  // The ability to increment reps based on the bool variable justAdded
-  if(justAddedDelayCurr > betweenRepDelayTime) {
-    justAdded = false;
-    justAddedDelayCurr = 0;
-  }
+  // Time in milliseconds from upload used to create a delay between the ability to make another rep after a certain time based on global variable betweenRepDelayTime.
+  // The ability to increment reps defined by the bool variable justAdded
+  unsigned long currTime = millis();
 
   // If the distance is not 0, that means the distance is within the max distance
+    // For delay between rep purposes we can set prevTime to equal currTime.
     // We can count this as a rep as long as a rep hasn't just been added defined by justAdded variable. justAdded is assigned as true
-  // If a rep has been just added, we can increment the timer for the rep delay
+  // If a rep has been just added, we can check if enough time has passed according to the globally defined between rep delay to allow reps to be made again.
   if(distance != 0) {
+    prevTime = currTime;
     if(!justAdded) {  
       display_num++;
       justAdded = true;
     }
   } else if(justAdded) {
-    justAddedDelayCurr++;
+    if(currTime - prevTime > betweenRepDelayTime) {
+      justAdded = false;
+    }
   }
 
   // Through every loop display the current display number in the display
@@ -255,8 +256,7 @@ void lightDigit(int digitToDisplay, int digitPosition) {
 
 
 ////////// Methods for RTC DS1307 module. main:: printTime() //////////
-void printTime(DateTime now)
-{
+void printTime(DateTime now) {
     Serial.print(now.year(), DEC);
     Serial.print('/');
     Serial.print(now.month(), DEC);
